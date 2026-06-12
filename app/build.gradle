@@ -4,9 +4,10 @@ plugins {
 }
 
 android {
-    compileSdkVersion rootProject.ext.versionCompiler
+    compileSdkVersion 36 //rootProject.ext.versionCompiler
     defaultConfig {
-        applicationId "com.jiangdg.ausbc"
+        applicationId "com.jiangdg.demo"
+        namespace applicationId
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.versionTarget
         versionCode rootProject.ext.versionCode
@@ -31,7 +32,7 @@ android {
     }
 
     kotlinOptions {
-        jvmTarget = '1.8'
+        jvmTarget = '11'
     }
 
     buildFeatures {
@@ -45,24 +46,28 @@ android {
 
 dependencies {
     implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.multidex:multidex:2.0.1"
     implementation "androidx.appcompat:appcompat:${androidXVersion}"
-    implementation "androidx.core:core-ktx:${kotlinCoreVersion}"
+    implementation "androidx.core:core-ktx:1.15.0"
     implementation "com.google.android.material:material:${materialVersion}"
     implementation "androidx.constraintlayout:constraintlayout:${constraintlayoutVersion}"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:${kotlinCoroutines}"
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "com.github.CymChad:BaseRecyclerViewAdapterHelper:$quick_version"
+    implementation 'com.github.CymChad:BaseRecyclerViewAdapterHelper:2.9.50'
+    //implementation "io.github.cymchad:BaseRecyclerViewAdapterHelper4:4.0.0"
     implementation "com.afollestad.material-dialogs:core:$dialog_version"
 
     implementation "com.tencent.bugly:crashreport:$bugly_version"
     implementation "com.tencent.bugly:nativecrashreport:$bugly_native_version"
 
-    api 'com.gyf.immersionbar:immersionbar:3.0.0'
+    //api 'com.gyf.immersionbar:immersionbar:3.0.0'
+    api 'com.geyifeng.immersionbar:immersionbar:3.2.2'
     implementation "com.github.bumptech.glide:glide:4.10.0"
     implementation "com.github.bumptech.glide:okhttp3-integration:4.10.0"
-    implementation "com.zlc.glide:webpdecoder:1.6.4.9.0"
+    //implementation "com.zlc.glide:webpdecoder:1.6.4.9.0"
+    //implementation 'com.github.zlc-platform:webpdecoder:2.1.0'
     implementation 'com.tencent:mmkv:1.2.12'
 
     // For debug online

@@ -27,7 +27,8 @@ rootProject.name = "AndroidUSBCamera"
 // Commented out so the project can build the core libraries only
 // (libuvc, libausbc, libnative). The demo app can be updated separately.
 
-// include ':app'
+// app 빌드시 lib dependency 오류가 많이 발생한다. lib 만 빌드한다.
+//include ':app'
 
 // Core libraries
 include ':libausbc'
