@@ -121,9 +121,9 @@ class CameraUVC(ctx: Context, device: UsbDevice) : MultiCameraClient.ICamera(ctx
         // 1. create a UVCCamera
         val request = mCameraRequest!!
         try {
-            mUvcCamera = UVCCamera().apply {
-                open(mCtrlBlock)
-            }
+            // 2026-08-03: open() 실패 시에도 정리 로직(destroy())이 실패한 인스턴스를 찾을 수 있도록 open() 호출 전에 필드를 먼저 대입 (clone된 UsbControlBlock/fd 누수 방지)
+            mUvcCamera = UVCCamera()
+            mUvcCamera?.open(mCtrlBlock)
         } catch (e: Exception) {
             closeCamera()
             postStateEvent(ICameraStateCallBack.State.ERROR, "open camera failed ${e.localizedMessage}")

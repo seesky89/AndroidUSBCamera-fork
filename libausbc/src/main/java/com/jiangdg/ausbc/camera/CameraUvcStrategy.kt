@@ -57,6 +57,8 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
     private val mRequestPermission: AtomicBoolean by lazy {
         AtomicBoolean(false)
     }
+    // 2026-08-03: unRegister() 이후 지연 실행되는 onConnect 콜백에서 등록 해제 여부를 판단하는 데 쓰이므로, 스레드 간 가시성 보장을 위해 volatile 처리
+    @Volatile
     private var mUsbMonitor: USBMonitor? = null
     private var mUVCCamera: UVCCamera? = null
     private var mDevConnectCallBack: IDeviceConnectCallBack? = null
@@ -129,9 +131,14 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
             val previewWidth = request.previewWidth
             val previewHeight = request.previewHeight
             request.cameraId = device.deviceId.toString()
-            mUVCCamera = UVCCamera().apply {
-                open(ctrlBlock)
+            // 2026-08-03: 이전 사이클의 UVCCamera가 아직 정리되지 않고 필드에 남아있다면, 덮어쓰기 전에 먼저 해제
+            // (겹쳐 실행되는 사이클이 서로의 mUVCCamera를 덮어써 destroy() 없이 USB 인터페이스가 누수되는 것 방지)
+            mUVCCamera?.let {
+                it.destroy()
             }
+            // 2026-08-03: open() 실패 시에도 정리 로직(destroy())이 실패한 인스턴스를 찾을 수 있도록 open() 호출 전에 필드를 먼저 대입 (clone된 UsbControlBlock/fd 누수 방지)
+            mUVCCamera = UVCCamera()
+            mUVCCamera?.open(ctrlBlock)
             if (! isPreviewSizeSupported(previewWidth, previewHeight)) {
                 postCameraStatus(CameraStatus(CameraStatus.ERROR_PREVIEW_SIZE, "unsupported preview size(${request.previewWidth}, ${request.previewHeight})"))
                 Logger.e(TAG, " unsupported preview size(${request.previewWidth}, ${request.previewHeight})")
@@ -446,6 +453,11 @@ class CameraUvcStrategy(ctx: Context) : ICameraStrategy(ctx) {
                     Logger.i(TAG, "onConnect device = ${device?.deviceName}")
                 }
                 if (!isUsbCamera(device) && !isFilterDevice(getContext(), device) && !mCacheDeviceList.contains(device)) {
+                    return
+                }
+                // 2026-08-03: unRegister()가 먼저 호출되어 mUsbMonitor가 null이 된 뒤 지연 실행된 콜백이면
+                // 이미 종료된 세션이므로 카메라를 열지 않고 무시 (고아 상태로 USB 인터페이스가 점유되는 것 방지)
+                if (mUsbMonitor == null) {
                     return
                 }
                 mDevSettableFuture = SettableFuture()

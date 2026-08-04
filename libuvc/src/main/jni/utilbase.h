@@ -203,7 +203,9 @@
 #endif
 
 #define		ENTER()				LOGD("begin")
-#define		RETURN(code,type)	{type RESULT = code; LOGD("end (%d)", (int)RESULT); return RESULT;}
+// 2026-08-03: (int)RESULT는 64bit ABI에서 포인터 타입에 대해 narrowing cast 컴파일 에러가 남(-Werror).
+// LOGD가 그동안 항상 no-op이라 드러나지 않았던 기존 버그. (long)은 32/64bit 모두에서 int/포인터를 안전하게 표현.
+#define		RETURN(code,type)	{type RESULT = code; LOGD("end (%ld)", (long)RESULT); return RESULT;}
 #define		RET(code)			{LOGD("end"); return code;}
 #define		EXIT()				{LOGD("end"); return;}
 #define		PRE_EXIT()			LOGD("end")

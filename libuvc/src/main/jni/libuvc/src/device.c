@@ -287,7 +287,11 @@ uvc_error_t uvc_open(uvc_device_t *dev, uvc_device_handle_t **devh) {
 	internal_devh = calloc(1, sizeof(*internal_devh));
 	internal_devh->dev = dev;
 	internal_devh->usb_devh = usb_devh;
-	internal_devh->reset_on_release_if = 0;	// XXX
+	// 2026-08-04: 정상적으로 스트리밍 후 종료(release)해도 alt-setting이 0으로 리셋되지 않아
+	// 다음 open 시도가 result=-6(BUSY)으로 계속 실패하는 사례가 확인됨(release_interface ioctl 자체는
+	// 성공하지만 디바이스가 여전히 점유된 것으로 남는 것으로 보임). 현재 사용 중인 USB 카메라가 전부
+	// Sonix 계열이라 벤더 조건 없이 항상 활성화. 원래의 XXX(Note2 회피용) 주석은 참고로 남겨둠.
+	internal_devh->reset_on_release_if = 1;
 	ret = uvc_get_device_info(dev, &(internal_devh->info));
 	pthread_mutex_init(&internal_devh->status_mutex, NULL);	// XXX saki
 

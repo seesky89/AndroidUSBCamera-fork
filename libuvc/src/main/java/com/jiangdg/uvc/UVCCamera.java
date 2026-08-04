@@ -228,8 +228,14 @@ public class UVCCamera {
 			mCurrentWidth = supportedSizes.get(0).width;
 			mCurrentHeight = supportedSizes.get(0).height;
 		}
-		nativeSetPreviewSize(mNativePtr, mCurrentWidth, mCurrentHeight,
+		// 2026-08-03: 이 결과를 확인하지 않으면 open() 내부에서 자동으로 시도하는 negotiate가 실패해도
+		// open()이 예외 없이 정상 반환되어, 상위(CameraUvcStrategy)의 catch->postCameraStatus(ERROR)로
+		// 에러가 전달되지 않는 문제가 있었음. nativeConnect/setPreviewSize와 동일하게 결과를 확인해서 throw.
+		final int previewSizeResult = nativeSetPreviewSize(mNativePtr, mCurrentWidth, mCurrentHeight,
 			DEFAULT_PREVIEW_MIN_FPS, DEFAULT_PREVIEW_MAX_FPS, DEFAULT_PREVIEW_MODE, DEFAULT_BANDWIDTH);
+		if (previewSizeResult != 0) {
+			throw new UnsupportedOperationException("open failed: nativeSetPreviewSize result=" + previewSizeResult);
+		}
     }
 
 	/**
@@ -444,7 +450,12 @@ public class UVCCamera {
      */
     public synchronized void startPreview() {
     	if (mCtrlBlock != null) {
-    		nativeStartPreview(mNativePtr);
+    		// 2026-08-03: 결과를 확인하지 않으면 실제 스트리밍 시작에 실패해도 예외 없이 반환되어,
+    		// 상위(CameraUvcStrategy)의 catch->postCameraStatus(ERROR)로 에러가 전달되지 않는 문제가 있었음.
+    		final int result = nativeStartPreview(mNativePtr);
+    		if (result != 0) {
+    			throw new UnsupportedOperationException("start preview failed: nativeStartPreview result=" + result);
+    		}
     	}
     }
 

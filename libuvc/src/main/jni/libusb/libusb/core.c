@@ -1624,10 +1624,18 @@ int API_EXPORTED libusb_claim_interface(libusb_device_handle *dev,
 			// EBUSYが返ってきた時はたぶんカーネルドライバーがアタッチされているから
 			// デタッチ要求してから再度claimしてみる
 			LOGV("request detach kernel driver and retry claim interface");
-			r = usbi_backend->release_interface(dev, interface_number);
+			// 2026-08-03: open failed:result=-99 원인 진단 결과 — 여기서 release_interface()가 실패(EINVAL 등)하면
+			// 그 실패 코드가 그대로 r에 덮어써져서, 실제 원인이었던 LIBUSB_ERROR_BUSY(-6)가 사라지고 엉뚱한
+			// LIBUSB_ERROR_OTHER(-99)가 리턴되던 버그. release가 안 되면 재claim을 시도할 수 없을 뿐이지
+			// 원래의 BUSY 에러는 그대로 보존해야 한다.
+			LOGW("claim_interface: busy(interface=%d), trying release+detach then retry", interface_number);
+			int release_err = usbi_backend->release_interface(dev, interface_number);
 			libusb_detach_kernel_driver(dev, interface_number);
-			if (!r) {
+			if (!release_err) {
 				r = usbi_backend->claim_interface(dev, interface_number);
+				LOGW("claim_interface: retried after release/detach, result=%d (interface=%d)", r, interface_number);
+			} else {
+				LOGW("claim_interface: release_interface failed(err=%d) before retry, keeping original BUSY error (interface=%d)", release_err, interface_number);
 			}
 		}
 		if (!r) {
